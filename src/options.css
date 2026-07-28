@@ -1,0 +1,250 @@
+/* Options page: base elements + components (utilities live in ui.css). */
+
+body {
+  margin: 0;
+  color: var(--fg);
+}
+
+main {
+  margin-top: 2rem;
+}
+
+label:not(.setting-name) {
+  display: block;
+  font-weight: 600;
+  margin: 0 0 0.4rem;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="search"] {
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+a {
+  color: var(--link);
+}
+
+button {
+  border: 0;
+  border-radius: 6px;
+  padding: 0.55rem 1rem;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+#save {
+  min-width: 7.5rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  font-weight: 500;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+.btn-link {
+  background: none;
+  color: var(--link);
+  padding: 0;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.panel {
+  padding: 1.1rem 1.15rem 1.25rem;
+}
+
+.panel-head {
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.75rem;
+}
+
+.panel h2 {
+  margin: 0;
+  font-weight: 650;
+}
+
+.list-box {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.repo-list {
+  max-height: 22rem;
+}
+
+.repo-list label,
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.45rem 0.65rem;
+  font-weight: 400;
+  border-bottom: 1px solid var(--border);
+}
+
+.repo-list label {
+  cursor: pointer;
+}
+
+.repo-list label:last-child,
+.list-row:last-child {
+  border-bottom: 0;
+}
+
+.repo-list label:hover,
+.list-row:hover {
+  background: var(--hover);
+}
+
+.repo-list label[hidden] {
+  display: none;
+}
+
+.repo-list input,
+.list-row input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.list-row .setting-name {
+  cursor: pointer;
+}
+
+.setting {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.setting-val {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.setting-val .setting-input,
+.setting-val .btn-secondary {
+  width: 7rem;
+  height: 1.65rem;
+  box-sizing: border-box;
+  padding: 0 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  text-align: center;
+}
+
+.setting-val .btn-secondary {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tip {
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tip-bubble {
+  display: none;
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.45rem);
+  transform: translateX(-50%);
+  z-index: 20;
+  width: max-content;
+  max-width: 18.5rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--fg);
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  text-align: left;
+  white-space: normal;
+}
+
+.tip-bubble .tip-title {
+  display: block;
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tip-bubble .tip-line + .tip-title {
+  margin-top: 0.65rem;
+}
+
+.tip-bubble .tip-line {
+  display: block;
+  margin: 0 0 0.55rem;
+}
+
+.tip-bubble .tip-line:last-child,
+.tip-bubble .tip-note:last-child {
+  margin-bottom: 0;
+}
+
+.tip-bubble .tip-note {
+  display: block;
+  margin-top: 0.15rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.tip-bubble code {
+  font-size: 0.85em;
+  padding: 0.05em 0.3em;
+  border-radius: 4px;
+  background: var(--hover);
+}
+
+.tip:hover .tip-bubble,
+.tip:focus .tip-bubble,
+.tip:focus-visible .tip-bubble {
+  display: block;
+}
+
+code {
+  font-size: 0.9em;
+}

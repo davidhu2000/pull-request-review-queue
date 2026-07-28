@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Pull Request Review Queue — Options</title>
+    <link rel="stylesheet" href="ui.css" />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body class="bg-page">
+    <main class="max-w-prose mx-auto px-5 pb-12">
+      <header class="mb-6">
+        <h1 class="text-2xl m-0 mb-1.5 flex items-baseline gap-2">
+          Pull Request Review Queue
+          <span class="text-sm font-medium text-muted">v0.0.4</span>
+        </h1>
+        <p class="text-muted m-0 leading-snug">
+          GitHub PAT + allowlist repos. Queue = open pull requests with review requested
+          of you.
+        </p>
+      </header>
+
+      <section
+        class="panel bg-surface border rounded-lg mb-3"
+        aria-labelledby="auth-heading"
+      >
+        <div class="panel-head border-b">
+          <h2 id="auth-heading" class="text-lg tracking-tight">
+            Authentication
+          </h2>
+          <p class="text-xs text-muted mt-1 m-0">
+            Token used for search + repo list.
+          </p>
+        </div>
+        <label for="token">GitHub personal access token</label>
+        <input
+          id="token"
+          type="password"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="github_pat_…"
+        />
+        <p class="text-2xs text-muted mt-2 m-0">
+          Create a
+          <a
+            href="https://github.com/settings/personal-access-tokens/new"
+            target="_blank"
+            rel="noopener"
+            >fine-grained token</a
+          >
+          with Pull requests: Read on allowlisted repos.
+        </p>
+      </section>
+
+      <section
+        class="panel bg-surface border rounded-lg mb-3"
+        aria-labelledby="repos-heading"
+      >
+        <div class="panel-head border-b">
+          <div class="flex items-center justify-between gap-3">
+            <h2 id="repos-heading" class="text-lg tracking-tight">
+              Repositories
+            </h2>
+            <button id="load-repos" type="button" class="btn-secondary">
+              Load from GitHub
+            </button>
+          </div>
+          <p class="text-xs text-muted mt-1 m-0">
+            Allowlist which repos enter the review queue.
+          </p>
+        </div>
+        <label for="filter" class="sr-only">Filter repositories</label>
+        <input
+          id="filter"
+          type="search"
+          placeholder="Filter…"
+          autocomplete="off"
+        />
+        <div class="flex items-center gap-3 mt-2 mb-2 flex-wrap">
+          <button id="select-visible" type="button" class="btn-link">
+            Select visible
+          </button>
+          <button id="clear-visible" type="button" class="btn-link">
+            Clear visible
+          </button>
+          <span id="count" class="ml-auto text-sm text-muted"></span>
+        </div>
+        <div
+          id="repo-list"
+          class="list-box repo-list overflow-auto"
+          role="group"
+          aria-label="Repository allowlist"
+        ></div>
+        <p id="repo-empty" class="text-sm text-muted mt-2 m-0">
+          No repos yet. Load from GitHub or save after loading.
+        </p>
+      </section>
+
+      <section
+        class="panel bg-surface border rounded-lg mb-3"
+        aria-labelledby="advanced-heading"
+      >
+        <div class="panel-head border-b">
+          <h2 id="advanced-heading" class="text-lg tracking-tight">Advanced</h2>
+          <p class="text-xs text-muted mt-1 m-0">
+            Queue sync and debug tools.
+          </p>
+        </div>
+        <div class="list-box" role="group" aria-label="Advanced settings">
+          <div class="list-row setting">
+            <div class="setting-key flex items-center gap-1.5 min-w-0">
+              <label class="setting-name m-0 font-normal" for="check-freq"
+                >Check frequency</label
+              >
+              <button
+                type="button"
+                class="tip relative rounded-full shrink-0 cursor-help"
+                aria-describedby="freq-tip"
+                aria-label="About check frequency"
+              >
+                ?
+                <span id="freq-tip" class="tip-bubble" role="tooltip">
+                  <span class="tip-title">Format</span>
+                  <span class="tip-line"
+                    >Examples: <code>45s</code>, <code>1m</code>,
+                    <code>5m</code>, <code>1h</code>. Unit required (not bare
+                    <code>2</code>). Default <code>2m</code>.</span
+                  >
+                  <span class="tip-title">GitHub limits</span>
+                  <span class="tip-line"
+                    >Search API: <strong>30 req/min</strong> (authenticated).
+                    REST: <strong>5,000/hour</strong>. Each check ≈ 1 search
+                    request.</span
+                  >
+                  <span class="tip-note"
+                    >Chrome alarms often clamp below ~1 minute.</span
+                  >
+                </span>
+              </button>
+            </div>
+            <div class="setting-val">
+              <input
+                id="check-freq"
+                class="setting-input"
+                type="text"
+                spellcheck="false"
+                placeholder="2m"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+
+          <div class="list-row setting">
+            <div class="setting-key flex items-center gap-1.5 min-w-0">
+              <label
+                class="setting-name m-0 font-normal"
+                for="debug-logs"
+                id="debug-logs-label"
+                >Debug logs</label
+              >
+              <button
+                type="button"
+                class="tip relative rounded-full shrink-0 cursor-help"
+                aria-describedby="debug-tip"
+                aria-label="About debug logs"
+              >
+                ?
+                <span id="debug-tip" class="tip-bubble" role="tooltip">
+                  <span class="tip-title">Console logging</span>
+                  <span class="tip-line"
+                    >When on, scheduled queue checks and <strong>Call API</strong> print
+                    request/response (and schedule events) prefixed <code>[PRQ]</code>.</span
+                  >
+                  <span class="tip-line"
+                    >Keep this Options page open (right-click → <strong>Inspect</strong>) to see
+                    background schedule logs here.</span
+                  >
+                </span>
+              </button>
+            </div>
+            <div class="setting-val">
+              <input
+                id="debug-logs"
+                type="checkbox"
+                aria-labelledby="debug-logs-label"
+              />
+            </div>
+          </div>
+
+          <div class="list-row setting">
+            <div class="setting-key min-w-0">
+              <span class="setting-name m-0 font-normal"
+                >Manual queue check</span
+              >
+            </div>
+            <div class="setting-val">
+              <button id="run-check" type="button" class="btn-secondary">
+                Call API
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="flex items-center gap-3 mt-4 pt-1">
+        <button id="save" type="button">Save</button>
+        <span id="status" class="text-base text-muted" role="status"></span>
+      </div>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
