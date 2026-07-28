@@ -1,0 +1,94 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 0.0.2). Leading v is optional."
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Need history for release notes; token so the bot can push.
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Normalize version
+        id: ver
+        run: |
+          set -euo pipefail
+          raw="${{ inputs.version }}"
+          raw="${raw#v}"
+          if [[ ! "$raw" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version must look like 0.0.2 (got: ${{ inputs.version }})"
+            exit 1
+          fi
+          if git rev-parse "v${raw}" >/dev/null 2>&1; then
+            echo "::error::Tag v${raw} already exists"
+            exit 1
+          fi
+          echo "version=${raw}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${raw}" >> "$GITHUB_OUTPUT"
+
+      - name: Bump manifest.json
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require("fs");
+          const version = process.env.VERSION;
+          const path = "manifest.json";
+          const manifest = JSON.parse(fs.readFileSync(path, "utf8"));
+          manifest.version = version;
+          fs.writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
+          console.log(`manifest.json → ${version}`);
+          NODE
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+
+      - name: Commit, tag, push
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          if git diff --cached --quiet; then
+            echo "::error::manifest.json already at ${{ steps.ver.outputs.version }}; nothing to bump"
+            exit 1
+          fi
+          git commit -m "release: ${{ steps.ver.outputs.tag }}"
+          git tag "${{ steps.ver.outputs.tag }}"
+          git push origin HEAD:${{ github.ref_name }}
+          git push origin "${{ steps.ver.outputs.tag }}"
+
+      - name: Package extension zip
+        run: |
+          set -euo pipefail
+          NAME="pull-request-review-queue-${{ steps.ver.outputs.version }}"
+          mkdir -p dist
+          zip -r "dist/${NAME}.zip" manifest.json icons src README.md -x "*.DS_Store"
+          echo "asset=dist/${NAME}.zip" >> "$GITHUB_ENV"
+          ls -la "dist/${NAME}.zip"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release create "${{ steps.ver.outputs.tag }}" \
+            --title "${{ steps.ver.outputs.tag }}" \
+            --generate-notes \
+            --target "${{ github.ref_name }}" \
+            "$asset"
