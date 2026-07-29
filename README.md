@@ -1,21 +1,25 @@
 # Pull Request Review Queue
 
-Chrome extension: queue of GitHub pull requests with **your** review requested. Hit **Next Pull Request** / `Alt+Shift+N` to jump to the next one.
+This solves a real issue I faced on a daily basis where I often have multiple pull requests waiting for my review. I started this project to have a way to quickly jump to the next pull request in my queue with minimal clicks.
 
-## Install (unpacked)
+## Features
+
+A list of all pull requests where you are assigned as reviewer.
+
+![PR Queue](assets/pr-queue.jpg)
+
+A `Next PR` button to quickly jump to the next pull request in your queue after reviewing the current one.
+
+![Next PR](assets/next-pr.jpg)
+
+## What PRs are included?
+
+- Queue = `is:pr is:open review-requested:@me draft:false` in selected repositories
+- Order = `updated` ascending (proxy for longest waiting)
+
+## Installation (unpacked)
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
 3. **Load unpacked** → this folder
 4. Open **Options** → paste PAT + allowlist repos (`owner/name`, one per line)
-
-### Token
-
-- Fine-grained: **Pull requests: Read** on the allowlisted repos
-
-## Behavior
-
-- Queue = `is:pr is:open review-requested:@me draft:false` in allowlist
-- Order = `updated` ascending (proxy for longest waiting)
-- Popup = full list; pull request pages = **Next Pull Request** button
-- Empty queue → toast “Queue clear”, stay on page
