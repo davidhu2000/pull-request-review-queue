@@ -2,8 +2,6 @@
 
 This solves a real issue I faced on a daily basis where I often have multiple pull requests waiting for my review. I started this project to have a way to quickly jump to the next pull request in my queue with minimal clicks.
 
-<video src="assets/demo.mp4" controls></video>
-
 ## Features
 
 A list of all pull requests where you are assigned as reviewer.
