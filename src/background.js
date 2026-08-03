@@ -295,29 +295,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         return;
       }
 
-      // Review submitted on a PR page: drop it from cache now, refetch after search lag.
-      if (msg?.type === "REVIEW_SUBMITTED") {
-        const cur = parsePrUrl(msg.currentUrl);
-        await hydrateCacheFromStorage();
-        let removed = false;
-        if (cache && cur) {
-          const nextItems = cache.items.filter(
-            (item) => !(item.repo === cur.repo && item.number === cur.number),
-          );
-          removed = nextItems.length !== cache.items.length;
-          if (removed) await persistQueue(nextItems, "");
-        }
-        await debugLog("review submitted", {
-          repo: cur?.repo,
-          number: cur?.number,
-          removed,
-        });
-        // GitHub search index often lags a few seconds.
-        chrome.alarms.create("post-review-refresh", { delayInMinutes: 0.05 });
-        sendResponse({ ok: true, removed });
-        return;
-      }
-
       if (msg?.type === "SET_CHECK_FREQUENCY") {
         const seconds = clampCheckSeconds(msg.seconds);
         await ensureRefreshAlarm(seconds, { force: true });
@@ -422,9 +399,7 @@ chrome.runtime.onStartup.addListener(async () => {
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name !== REFRESH_ALARM && alarm.name !== "post-review-refresh") {
-    return;
-  }
+  if (alarm.name !== REFRESH_ALARM) return;
   // Keep listener sync-return fast; do work in async IIFE (MV3 best practice).
   (async () => {
     await debugLog("alarm fired", {

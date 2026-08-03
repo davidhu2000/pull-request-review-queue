@@ -21,7 +21,6 @@
   document.documentElement.appendChild(root);
 
   let toastTimer = 0;
-  let lastSubmitAt = 0;
   let loading = false;
 
   function showToast(text) {
@@ -114,60 +113,6 @@
       await syncNextButton();
     }
   }
-
-  /** @param {Element | null} el */
-  function isReviewSubmitControl(el) {
-    if (!el) return false;
-    const btn = el.closest(
-      'button, input[type="submit"], [role="button"], summary',
-    );
-    if (!btn || btn.closest("#prq-root")) return false;
-
-    const name = (btn.getAttribute("name") || "").toLowerCase();
-    if (name.includes("pull_request_review")) return true;
-
-    const form = btn.closest("form");
-    const action = (form?.getAttribute("action") || "").toLowerCase();
-    if (/\/pull\/\d+\/reviews?\b/.test(action)) return true;
-
-    const label = `${btn.textContent || ""} ${btn.getAttribute("aria-label") || ""} ${btn.value || ""}`
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, " ");
-    if (label === "submit review" || label.includes("submit review")) {
-      return true;
-    }
-    return false;
-  }
-
-  function notifyReviewSubmitted() {
-    const now = Date.now();
-    if (now - lastSubmitAt < 2500) return;
-    lastSubmitAt = now;
-    void send({ type: "REVIEW_SUBMITTED", currentUrl: location.href }).then(
-      () => syncNextButton(),
-    );
-  }
-
-  document.addEventListener(
-    "click",
-    (ev) => {
-      if (!(ev.target instanceof Element)) return;
-      if (isReviewSubmitControl(ev.target)) notifyReviewSubmitted();
-    },
-    true,
-  );
-
-  document.addEventListener(
-    "submit",
-    (ev) => {
-      const form = ev.target;
-      if (!(form instanceof HTMLFormElement)) return;
-      const action = (form.getAttribute("action") || "").toLowerCase();
-      if (/\/pull\/\d+\/reviews?\b/.test(action)) notifyReviewSubmitted();
-    },
-    true,
-  );
 
   nextBtn.addEventListener("click", () => goNext());
 
