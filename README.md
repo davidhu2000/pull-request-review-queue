@@ -12,6 +12,8 @@ A `Next PR` button to quickly jump to the next pull request in your queue after 
 
 ![Next PR](assets/next-pr.jpg)
 
+An `Approve and Next PR` button to approve the current pull request and move directly to the next item. Navigation only happens after GitHub confirms the approval.
+
 ## What PRs are included?
 
 - Queue = `is:pr is:open review-requested:@me draft:false` in selected repositories
@@ -22,4 +24,4 @@ A `Next PR` button to quickly jump to the next pull request in your queue after 
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
 3. **Load unpacked** → this folder
-4. Open **Options** → paste PAT + allowlist repos (`owner/name`, one per line)
+4. Open **Options** → paste a PAT with **Pull requests: Read and write**, then allowlist repos (`owner/name`, one per line)

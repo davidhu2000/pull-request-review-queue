@@ -14,14 +14,23 @@
  * @param {string} token
  * @param {string} path
  * @param {Record<string, string>} [query]
- * @param {{ onDebug?: (...args: unknown[]) => void }} [opts]
+ * @param {{
+ *   onDebug?: (...args: unknown[]) => void,
+ *   method?: string,
+ *   body?: unknown,
+ * }} [opts]
  */
-export async function ghFetch(token, path, query = {}, { onDebug } = {}) {
+export async function ghFetch(
+  token,
+  path,
+  query = {},
+  { onDebug, method = "GET", body: requestBody } = {},
+) {
   const url = new URL(`https://api.github.com${path}`);
   for (const [k, v] of Object.entries(query)) url.searchParams.set(k, v);
   const safeUrl = url.toString();
   onDebug?.("request", {
-    method: "GET",
+    method,
     url: safeUrl,
     path,
     query: { ...query },
@@ -33,18 +42,25 @@ export async function ghFetch(token, path, query = {}, { onDebug } = {}) {
   });
 
   const res = await fetch(url, {
+    method,
     headers: {
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${token}`,
       "X-GitHub-Api-Version": "2022-11-28",
+      ...(requestBody === undefined
+        ? {}
+        : { "Content-Type": "application/json" }),
     },
+    ...(requestBody === undefined
+      ? {}
+      : { body: JSON.stringify(requestBody) }),
   });
   const bodyText = await res.text();
-  let body;
+  let responseBody;
   try {
-    body = JSON.parse(bodyText);
+    responseBody = JSON.parse(bodyText);
   } catch {
-    body = bodyText;
+    responseBody = bodyText;
   }
   const headers = {};
   res.headers.forEach((value, key) => {
@@ -55,16 +71,79 @@ export async function ghFetch(token, path, query = {}, { onDebug } = {}) {
     ok: res.ok,
     url: safeUrl,
     headers,
-    body,
+    body: responseBody,
   });
 
   if (!res.ok) {
-    throw new Error(`GitHub ${res.status}: ${bodyText.slice(0, 200)}`);
+    const apiMessage =
+      responseBody &&
+      typeof responseBody === "object" &&
+      "message" in responseBody
+        ? String(responseBody.message)
+        : bodyText.slice(0, 200);
+    if (
+      res.status === 403 &&
+      /resource not accessible by personal access token/i.test(apiMessage)
+    ) {
+      throw new Error(
+        "GitHub denied this action. Update your PAT to Pull requests: Read and write for this repository, then retry. If you created a replacement token, save it in Options. If it already has write access, check whether your organization still needs to approve it.",
+      );
+    }
+    throw new Error(`GitHub ${res.status}: ${apiMessage}`);
   }
-  if (typeof body === "string") {
+  if (typeof responseBody === "string") {
     throw new Error(`GitHub ${res.status}: invalid JSON`);
   }
-  return body;
+  return responseBody;
+}
+
+/**
+ * Approve a pull request, submitting an existing pending review when present
+ * so draft inline comments are included.
+ * @param {string} token
+ * @param {string} repo
+ * @param {number} number
+ * @param {{ onDebug?: (...args: unknown[]) => void }} [opts]
+ */
+export async function approvePullRequest(
+  token,
+  repo,
+  number,
+  { onDebug } = {},
+) {
+  if (!token) throw new Error("Set a GitHub PAT in extension options.");
+  const [owner, name, ...extra] = String(repo).split("/");
+  if (!owner || !name || extra.length || !Number.isInteger(number)) {
+    throw new Error("Could not identify this pull request.");
+  }
+  const reviewsPath =
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}` +
+    `/pulls/${number}/reviews`;
+  const reviews = await ghFetch(
+    token,
+    reviewsPath,
+    { per_page: "100" },
+    { onDebug },
+  );
+  const pending = Array.isArray(reviews)
+    ? reviews.find((review) => review?.state === "PENDING")
+    : null;
+
+  if (pending?.id) {
+    return ghFetch(
+      token,
+      `${reviewsPath}/${pending.id}/events`,
+      {},
+      { method: "POST", body: { event: "APPROVE" }, onDebug },
+    );
+  }
+
+  return ghFetch(
+    token,
+    reviewsPath,
+    {},
+    { method: "POST", body: { event: "APPROVE" }, onDebug },
+  );
 }
 
 /**
