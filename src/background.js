@@ -1,4 +1,4 @@
-import { fetchReviewQueue } from "./github.js";
+import { approvePullRequest, fetchReviewQueue } from "./github.js";
 import {
   LOCAL,
   SYNC,
@@ -243,6 +243,40 @@ async function getNext(currentUrl) {
   return { next: nextFromQueue(items, currentUrl), remaining: items.length };
 }
 
+/** @param {string | undefined} currentUrl */
+async function approveAndGetNext(currentUrl) {
+  const current = parsePrUrl(currentUrl);
+  if (!current) throw new Error("Open a GitHub pull request first.");
+
+  // Refresh before approval so a later queue error cannot make a successful
+  // approval look like a failure or tempt the user to approve twice.
+  let queued = (await readCachedQueue())?.items || [];
+  try {
+    queued = await getQueue({ force: true });
+  } catch {
+    // Approval can still proceed; the cached queue is enough to choose next.
+  }
+
+  const settings = await readSettings();
+  const onDebug = (...args) => {
+    void debugLog(...args);
+  };
+  await approvePullRequest(settings.token, current.repo, current.number, {
+    onDebug,
+  });
+
+  // Search can be briefly stale after a review. Always remove the PR that was
+  // just approved before updating the badge or choosing the next item.
+  const items = queued.filter(
+    (item) => item.repo !== current.repo || item.number !== current.number,
+  );
+  await persistQueue(items, "");
+  return {
+    next: nextFromQueue(items, currentUrl),
+    remaining: items.length,
+  };
+}
+
 function warmQueue({ force = false } = {}) {
   getQueue({ force }).catch(async () => {
     const cached = await readCachedQueue();
@@ -292,6 +326,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
       if (msg?.type === "NEXT" || msg?.type === "GET_NEXT") {
         sendResponse({ ok: true, ...(await getNext(msg.currentUrl)) });
+        return;
+      }
+
+      if (msg?.type === "APPROVE_AND_NEXT") {
+        sendResponse({
+          ok: true,
+          approved: true,
+          ...(await approveAndGetNext(msg.currentUrl)),
+        });
         return;
       }
 

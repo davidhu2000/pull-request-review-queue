@@ -15,11 +15,17 @@
     sans-serif;
 }
 
-#prq-next {
+#prq-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#prq-next,
+#prq-approve-next {
   border: 0;
   border-radius: 999px;
   padding: 10px 14px;
-  background: #1f883d;
   color: #fff;
   font: inherit;
   font-size: 13px;
@@ -28,14 +34,23 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
 }
 
-#prq-next:disabled {
+#prq-next {
+  background: #57606a;
+}
+
+#prq-approve-next {
+  background: #1f883d;
+}
+
+#prq-next:disabled,
+#prq-approve-next:disabled {
   opacity: 0.45;
   cursor: not-allowed;
   box-shadow: none;
 }
 
 #prq-toast {
-  max-width: 280px;
+  max-width: 360px;
   padding: 8px 12px;
   border-radius: 8px;
   background: #24292f;
