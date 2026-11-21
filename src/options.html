@@ -92,18 +92,19 @@
             <button id="clear-visible" type="button" class="btn-link">
               Clear visible
             </button>
-            <span id="count" class="ml-auto text-sm text-muted"></span>
           </div>
-          <div
-            id="repo-list"
-            class="list-box repo-list overflow-auto"
-            role="group"
-            aria-label="Repository allowlist"
-          ></div>
-          <p id="repo-empty" class="text-sm text-muted mt-2 m-0">
-            Load from GitHub to choose repos.
-          </p>
         </div>
+        <p id="count" class="text-sm text-muted mt-2 mb-2" role="status" hidden></p>
+        <div
+          id="repo-list"
+          class="list-box repo-list overflow-auto"
+          role="group"
+          aria-label="Repository list"
+          hidden
+        ></div>
+        <p id="repo-empty" class="text-sm text-muted mt-2 m-0">
+          Load from GitHub to choose repos.
+        </p>
       </section>
 
       <section

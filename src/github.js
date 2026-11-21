@@ -150,6 +150,15 @@ const QUEUE_PAGE_SIZE = 100;
 const QUEUE_MAX_PAGES = 3;
 
 /**
+ * @param {string[]} repos
+ * @param {string} filter
+ */
+export function matchingRepos(repos, filter) {
+  const query = filter.trim().toLowerCase();
+  return repos.filter((repo) => repo.includes(query));
+}
+
+/**
  * @param {string} token
  * @param {string[]} repos
  * @param {{ repoFilter?: string, onDebug?: (...args: unknown[]) => void }} [opts]
@@ -161,10 +170,9 @@ export async function fetchReviewQueue(
   { repoFilter = "", onDebug } = {},
 ) {
   if (!token) throw new Error("Set a GitHub PAT in extension options.");
-  const filter = repoFilter.trim().toLowerCase();
-  if (filter) {
+  if (repoFilter.trim()) {
     const available = await fetchUserRepos(token, { onDebug });
-    repos = available.filter((repo) => repo.includes(filter));
+    repos = matchingRepos(available, repoFilter);
   } else if (!repos.length) {
     throw new Error("Add at least one repo in extension options.");
   }

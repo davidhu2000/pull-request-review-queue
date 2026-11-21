@@ -94,6 +94,7 @@ button:disabled {
 }
 
 .repo-list label,
+.repo-list .repo-name,
 .list-row {
   display: flex;
   align-items: center;
@@ -109,6 +110,7 @@ button:disabled {
 }
 
 .repo-list label:last-child,
+.repo-list .repo-name:last-child,
 .list-row:last-child {
   border-bottom: 0;
 }
