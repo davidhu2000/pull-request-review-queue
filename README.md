@@ -24,4 +24,4 @@ An `Approve and Next PR` button to approve the current pull request and move dir
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
 3. **Load unpacked** → this folder
-4. Open **Options** → paste a PAT with **Pull requests: Read and write**, then allowlist repos (`owner/name`, one per line)
+4. Open **Options**, paste a PAT with **Pull requests: Read and write**, and choose repos. Set the **Queue repository filter** to match part of each repo's `owner/repo` name on every check, or use **Load from GitHub** to select individual repos.

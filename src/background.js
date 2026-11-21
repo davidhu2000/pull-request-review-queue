@@ -186,6 +186,7 @@ async function getQueue({ force = false } = {}) {
         void debugLog(...args);
       };
       const items = await fetchReviewQueue(settings.token, settings.repos, {
+        repoFilter: settings.repoFilter,
         onDebug,
       });
       await persistQueue(items, "");
@@ -413,7 +414,7 @@ chrome.commands.onCommand.addListener(async (command) => {
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== "sync") return;
-  if (changes[SYNC.token] || changes[SYNC.repos]) {
+  if (changes[SYNC.token] || changes[SYNC.repos] || changes[SYNC.repoFilter]) {
     cache = null;
     warmQueue({ force: true });
   }

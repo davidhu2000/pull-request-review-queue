@@ -3,6 +3,7 @@
 export const SYNC = {
   token: "token",
   repos: "repos",
+  repoFilter: "repoFilter",
   checkSeconds: "checkSeconds",
   checkFreq: "checkFreq",
   checkMinutes: "checkMinutes", // legacy — migrated on read
@@ -89,6 +90,7 @@ export function normalizeRepos(raw) {
  * @typedef {{
  *   token: string,
  *   repos: string[],
+ *   repoFilter: string,
  *   checkSeconds: number,
  *   checkFreq: string,
  *   debugLogs: boolean,
@@ -100,6 +102,7 @@ export async function readSettings() {
   const data = await chrome.storage.sync.get([
     SYNC.token,
     SYNC.repos,
+    SYNC.repoFilter,
     SYNC.checkSeconds,
     SYNC.checkFreq,
     SYNC.checkMinutes,
@@ -108,6 +111,7 @@ export async function readSettings() {
 
   const token = String(data[SYNC.token] || "").trim();
   const repos = normalizeRepos(data[SYNC.repos] || []);
+  const repoFilter = String(data[SYNC.repoFilter] || "").trim();
 
   let checkSeconds = Number(data[SYNC.checkSeconds]);
   if (!Number.isFinite(checkSeconds) || checkSeconds <= 0) {
@@ -133,7 +137,7 @@ export async function readSettings() {
       .catch(() => {});
   }
 
-  return { token, repos, checkSeconds, checkFreq, debugLogs };
+  return { token, repos, repoFilter, checkSeconds, checkFreq, debugLogs };
 }
 
 /** @param {boolean} on */

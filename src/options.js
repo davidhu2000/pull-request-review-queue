@@ -13,6 +13,8 @@ import {
 } from "./settings.js";
 
 const tokenEl = document.getElementById("token");
+const queueFilterEl = document.getElementById("queue-repo-filter");
+const repoPickerEl = document.getElementById("repo-picker");
 const filterEl = document.getElementById("filter");
 const listEl = document.getElementById("repo-list");
 const emptyEl = document.getElementById("repo-empty");
@@ -74,15 +76,25 @@ function onDebug(...args) {
   console.log("[PRQ]", ...args);
 }
 
+function updateRepoPicker() {
+  const useFilter = Boolean(queueFilterEl.value.trim());
+  repoPickerEl.hidden = useFilter;
+  loadBtn.hidden = useFilter;
+}
+
 async function load() {
   const settings = await readSettings();
   tokenEl.value = settings.token;
+  queueFilterEl.value = settings.repoFilter;
+  updateRepoPicker();
   repoState.clear();
   for (const name of settings.repos) repoState.set(name, true);
   renderList();
   checkFreqEl.value = settings.checkFreq || DEFAULT_CHECK_LABEL;
   debugLogsEl.checked = settings.debugLogs;
 }
+
+queueFilterEl.addEventListener("input", updateRepoPicker);
 
 loadBtn.addEventListener("click", async () => {
   const token = tokenEl.value.trim();
@@ -139,16 +151,17 @@ clearVisibleBtn.addEventListener("click", () => {
 
 saveBtn.addEventListener("click", async () => {
   const token = tokenEl.value.trim();
-  const repos = selectedRepos();
+  const repoFilter = queueFilterEl.value.trim();
+  const repos = repoFilter ? [] : selectedRepos();
   const checkFreq = checkFreqEl.value.trim() || DEFAULT_CHECK_LABEL;
   const checkSeconds = parseDurationToSeconds(checkFreq);
-  const bad = repos.filter((r) => !/^[a-z0-9_.-]+\/[a-z0-9_.-]+$/i.test(r));
-  if (bad.length) {
-    statusEl.textContent = `Bad repo id: ${bad[0]}`;
+  const bad = repos.find((r) => !/^[a-z0-9_.-]+\/[a-z0-9_.-]+$/i.test(r));
+  if (bad) {
+    statusEl.textContent = `Bad repo id: ${bad}`;
     return;
   }
-  if (!repos.length) {
-    statusEl.textContent = "Select at least one repo.";
+  if (!repoFilter && !repos.length) {
+    statusEl.textContent = "Select at least one repo or enter a queue filter.";
     return;
   }
   if (checkSeconds == null) {
@@ -165,13 +178,19 @@ saveBtn.addEventListener("click", async () => {
   }
   const normalized = formatDuration(checkSeconds);
   checkFreqEl.value = normalized;
-  await chrome.storage.sync.set({
-    [SYNC.token]: token,
-    [SYNC.repos]: repos,
-    [SYNC.checkSeconds]: checkSeconds,
-    [SYNC.checkFreq]: normalized,
-    [SYNC.debugLogs]: debugLogsEl.checked,
-  });
+  try {
+    await chrome.storage.sync.set({
+      [SYNC.token]: token,
+      [SYNC.repoFilter]: repoFilter,
+      ...(repoFilter ? {} : { [SYNC.repos]: repos }),
+      [SYNC.checkSeconds]: checkSeconds,
+      [SYNC.checkFreq]: normalized,
+      [SYNC.debugLogs]: debugLogsEl.checked,
+    });
+  } catch (err) {
+    statusEl.textContent = err instanceof Error ? err.message : String(err);
+    return;
+  }
   statusEl.textContent = "Saved.";
   chrome.runtime
     .sendMessage({ type: "SET_CHECK_FREQUENCY", seconds: checkSeconds })
@@ -223,6 +242,7 @@ runCheckBtn.addEventListener("click", async () => {
     const token = tokenEl.value.trim() || settings.token;
     const repos = selectedRepos().length ? selectedRepos() : settings.repos;
     const items = await fetchReviewQueue(token, normalizeRepos(repos), {
+      repoFilter: queueFilterEl.value,
       onDebug,
     });
     await persistQueueItems(items);
