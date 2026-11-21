@@ -14,8 +14,7 @@
           <span class="text-sm font-medium text-muted">v0.0.4</span>
         </h1>
         <p class="text-muted m-0 leading-snug">
-          GitHub PAT + allowlist repos. Queue = open pull requests with review requested
-          of you.
+          Open pull requests awaiting your review.
         </p>
       </header>
 
@@ -47,7 +46,7 @@
             rel="noopener"
             >fine-grained token</a
           >
-          with Pull requests: Read and write on allowlisted repos.
+          with Pull requests: Read and write on repos you want to review.
         </p>
       </section>
 
@@ -64,35 +63,47 @@
               Load from GitHub
             </button>
           </div>
-          <p class="text-xs text-muted mt-1 m-0">
-            Allowlist which repos enter the review queue.
+        </div>
+        <label for="queue-repo-filter">Queue repository filter</label>
+        <input
+          id="queue-repo-filter"
+          type="search"
+          placeholder="my-org/"
+          autocomplete="off"
+          spellcheck="false"
+          aria-describedby="queue-repo-filter-help"
+        />
+        <p id="queue-repo-filter-help" class="text-xs text-muted mt-2 mb-3">
+          Match part of <code>owner/repo</code> for each queue check. Leave blank
+          to choose repos below.
+        </p>
+        <div id="repo-picker">
+          <label for="filter" class="sr-only">Filter repository list</label>
+          <input
+            id="filter"
+            type="search"
+            placeholder="Filter repository list…"
+            autocomplete="off"
+          />
+          <div class="flex items-center gap-3 mt-2 mb-2 flex-wrap">
+            <button id="select-visible" type="button" class="btn-link">
+              Select visible
+            </button>
+            <button id="clear-visible" type="button" class="btn-link">
+              Clear visible
+            </button>
+            <span id="count" class="ml-auto text-sm text-muted"></span>
+          </div>
+          <div
+            id="repo-list"
+            class="list-box repo-list overflow-auto"
+            role="group"
+            aria-label="Repository allowlist"
+          ></div>
+          <p id="repo-empty" class="text-sm text-muted mt-2 m-0">
+            Load from GitHub to choose repos.
           </p>
         </div>
-        <label for="filter" class="sr-only">Filter repositories</label>
-        <input
-          id="filter"
-          type="search"
-          placeholder="Filter…"
-          autocomplete="off"
-        />
-        <div class="flex items-center gap-3 mt-2 mb-2 flex-wrap">
-          <button id="select-visible" type="button" class="btn-link">
-            Select visible
-          </button>
-          <button id="clear-visible" type="button" class="btn-link">
-            Clear visible
-          </button>
-          <span id="count" class="ml-auto text-sm text-muted"></span>
-        </div>
-        <div
-          id="repo-list"
-          class="list-box repo-list overflow-auto"
-          role="group"
-          aria-label="Repository allowlist"
-        ></div>
-        <p id="repo-empty" class="text-sm text-muted mt-2 m-0">
-          No repos yet. Load from GitHub or save after loading.
-        </p>
       </section>
 
       <section
@@ -128,8 +139,8 @@
                   <span class="tip-title">GitHub limits</span>
                   <span class="tip-line"
                     >Search API: <strong>30 req/min</strong> (authenticated).
-                    REST: <strong>5,000/hour</strong>. Each check ≈ 1 search
-                    request.</span
+                    REST: <strong>5,000/hour</strong>. Large repo lists require
+                    multiple search requests.</span
                   >
                   <span class="tip-note"
                     >Chrome alarms often clamp below ~1 minute.</span

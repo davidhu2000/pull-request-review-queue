@@ -146,24 +146,56 @@ export async function approvePullRequest(
   );
 }
 
+const QUEUE_PAGE_SIZE = 100;
+const QUEUE_MAX_PAGES = 3;
+
 /**
  * @param {string} token
  * @param {string[]} repos
- * @param {{ onDebug?: (...args: unknown[]) => void }} [opts]
+ * @param {{ repoFilter?: string, onDebug?: (...args: unknown[]) => void }} [opts]
  * @returns {Promise<QueueItem[]>}
  */
-export async function fetchReviewQueue(token, repos, { onDebug } = {}) {
+export async function fetchReviewQueue(
+  token,
+  repos,
+  { repoFilter = "", onDebug } = {},
+) {
   if (!token) throw new Error("Set a GitHub PAT in extension options.");
-  if (!repos.length)
+  const filter = repoFilter.trim().toLowerCase();
+  if (filter) {
+    const available = await fetchUserRepos(token, { onDebug });
+    repos = available.filter((repo) => repo.includes(filter));
+  } else if (!repos.length) {
     throw new Error("Add at least one repo in extension options.");
+  }
 
+  // Bound the URL length even when the filter matches many repositories.
+  const reposPerSearch = 40;
+  /** @type {QueueItem[]} */
+  const items = [];
+  for (let start = 0; start < repos.length; start += reposPerSearch) {
+    const batch = repos.slice(start, start + reposPerSearch);
+    items.push(...(await searchReviewQueue(token, batch, onDebug)));
+  }
+  items.sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
+  const queue = items.slice(0, QUEUE_MAX_PAGES * QUEUE_PAGE_SIZE);
+  onDebug?.("fetchReviewQueue done", { count: queue.length, items: queue });
+  return queue;
+}
+
+/**
+ * @param {string} token
+ * @param {string[]} repos
+ * @param {(...args: unknown[]) => void} [onDebug]
+ */
+async function searchReviewQueue(token, repos, onDebug) {
   const repoQ = repos.map((r) => `repo:${r}`).join(" ");
   const q = `is:pr is:open review-requested:@me draft:false ${repoQ}`;
   onDebug?.("fetchReviewQueue", { repos, q });
 
   /** @type {QueueItem[]} */
   const items = [];
-  for (let page = 1; page <= 3; page += 1) {
+  for (let page = 1; page <= QUEUE_MAX_PAGES; page += 1) {
     const data = await ghFetch(
       token,
       "/search/issues",
@@ -171,7 +203,7 @@ export async function fetchReviewQueue(token, repos, { onDebug } = {}) {
         q,
         sort: "updated",
         order: "asc",
-        per_page: "100",
+        per_page: String(QUEUE_PAGE_SIZE),
         page: String(page),
       },
       { onDebug },
@@ -193,7 +225,6 @@ export async function fetchReviewQueue(token, repos, { onDebug } = {}) {
     if (!data.items?.length || items.length >= (data.total_count || 0)) break;
   }
 
-  onDebug?.("fetchReviewQueue done", { count: items.length, items });
   return items;
 }
 
