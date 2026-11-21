@@ -74,9 +74,12 @@
           aria-describedby="queue-repo-filter-help"
         />
         <p id="queue-repo-filter-help" class="text-xs text-muted mt-2 mb-3">
-          Match part of <code>owner/repo</code> for each queue check. Leave blank
-          to choose repos below.
+          Match part of <code>owner/repo</code> to include every matching repo
+          in the queue.
         </p>
+        <button id="select-specific-repos" type="button" class="btn-secondary" hidden>
+          Select specific repos
+        </button>
         <div id="repo-picker">
           <label for="filter" class="sr-only">Filter repository list</label>
           <input
