@@ -1,4 +1,4 @@
-import { fetchReviewQueue, fetchUserRepos } from "./github.js";
+import { fetchReviewQueue, fetchUserRepos, matchingRepos } from "./github.js";
 import {
   DEFAULT_CHECK_LABEL,
   LOCAL,
@@ -30,6 +30,8 @@ const runCheckBtn = document.getElementById("run-check");
 
 /** @type {Map<string, boolean>} */
 const repoState = new Map();
+/** @type {string[] | null} */
+let loadedRepos = null;
 
 function selectedRepos() {
   return [...repoState.entries()]
@@ -41,13 +43,36 @@ function selectedRepos() {
 function updateCount() {
   const n = selectedRepos().length;
   countEl.textContent = n ? `${n} selected` : "";
-  emptyEl.hidden = repoState.size > 0;
+  countEl.hidden = n === 0;
 }
 
 function renderList() {
+  const repoFilter = queueFilterEl.value.trim();
+  const names = repoFilter
+    ? matchingRepos(loadedRepos ?? [], repoFilter)
+    : [...repoState.keys()].sort();
+  repoPickerEl.hidden = Boolean(repoFilter);
+  listEl.hidden = names.length === 0;
+  emptyEl.hidden = names.length > 0;
+  listEl.replaceChildren();
+
+  if (repoFilter) {
+    for (const name of names) {
+      const row = document.createElement("div");
+      row.className = "repo-name";
+      row.textContent = name;
+      listEl.appendChild(row);
+    }
+    countEl.textContent = `${names.length} matching ${names.length === 1 ? "repo" : "repos"}`;
+    countEl.hidden = names.length === 0;
+    emptyEl.textContent = loadedRepos
+      ? "No repos match the queue filter."
+      : "Load from GitHub to preview matching repos.";
+    return;
+  }
+
+  emptyEl.textContent = "Load from GitHub to choose repos.";
   const q = filterEl.value.trim().toLowerCase();
-  const names = [...repoState.keys()].sort();
-  listEl.innerHTML = "";
   for (const name of names) {
     const label = document.createElement("label");
     if (q && !name.includes(q)) label.hidden = true;
@@ -76,17 +101,10 @@ function onDebug(...args) {
   console.log("[PRQ]", ...args);
 }
 
-function updateRepoPicker() {
-  const useFilter = Boolean(queueFilterEl.value.trim());
-  repoPickerEl.hidden = useFilter;
-  loadBtn.hidden = useFilter;
-}
-
 async function load() {
   const settings = await readSettings();
   tokenEl.value = settings.token;
   queueFilterEl.value = settings.repoFilter;
-  updateRepoPicker();
   repoState.clear();
   for (const name of settings.repos) repoState.set(name, true);
   renderList();
@@ -94,7 +112,11 @@ async function load() {
   debugLogsEl.checked = settings.debugLogs;
 }
 
-queueFilterEl.addEventListener("input", updateRepoPicker);
+queueFilterEl.addEventListener("input", renderList);
+tokenEl.addEventListener("input", () => {
+  loadedRepos = null;
+  if (queueFilterEl.value.trim()) renderList();
+});
 
 loadBtn.addEventListener("click", async () => {
   const token = tokenEl.value.trim();
@@ -105,15 +127,20 @@ loadBtn.addEventListener("click", async () => {
   loadBtn.disabled = true;
   statusEl.textContent = "Loading repos…";
   try {
-    const selected = new Set(selectedRepos());
     const names = await fetchUserRepos(token, { onDebug });
+    if (tokenEl.value.trim() !== token) {
+      statusEl.textContent = "";
+      return;
+    }
+    loadedRepos = names;
+    const selected = new Set(selectedRepos());
     repoState.clear();
     for (const name of names) repoState.set(name, selected.has(name));
     for (const name of selected) {
       if (!repoState.has(name)) repoState.set(name, true);
     }
     renderList();
-    statusEl.textContent = `Loaded ${names.length} repos. Check allowlist, then Save.`;
+    statusEl.textContent = `Loaded ${names.length} repos.`;
   } catch (err) {
     statusEl.textContent = err instanceof Error ? err.message : String(err);
   } finally {
