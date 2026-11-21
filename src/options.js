@@ -22,6 +22,7 @@ const statusEl = document.getElementById("status");
 const countEl = document.getElementById("count");
 const saveBtn = document.getElementById("save");
 const loadBtn = document.getElementById("load-repos");
+const selectSpecificBtn = document.getElementById("select-specific-repos");
 const selectVisibleBtn = document.getElementById("select-visible");
 const clearVisibleBtn = document.getElementById("clear-visible");
 const checkFreqEl = document.getElementById("check-freq");
@@ -52,6 +53,7 @@ function renderList() {
     ? matchingRepos(loadedRepos ?? [], repoFilter)
     : [...repoState.keys()].sort();
   repoPickerEl.hidden = Boolean(repoFilter);
+  selectSpecificBtn.hidden = !repoFilter || names.length === 0;
   listEl.hidden = names.length === 0;
   emptyEl.hidden = names.length > 0;
   listEl.replaceChildren();
@@ -113,6 +115,13 @@ async function load() {
 }
 
 queueFilterEl.addEventListener("input", renderList);
+selectSpecificBtn.addEventListener("click", () => {
+  filterEl.value = queueFilterEl.value.trim();
+  queueFilterEl.value = "";
+  renderList();
+  filterEl.focus();
+});
+
 tokenEl.addEventListener("input", () => {
   loadedRepos = null;
   if (queueFilterEl.value.trim()) renderList();
